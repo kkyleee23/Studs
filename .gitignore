@@ -31,3 +31,4 @@ pnpm-debug.log*
 
 # Vite
 *.local
+.env.example
