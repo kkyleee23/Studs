@@ -28,6 +28,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 .claude/
+.docs/
 
 # Vite
 *.local
