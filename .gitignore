@@ -29,6 +29,7 @@ pnpm-debug.log*
 
 .claude/
 .docs/
+specs-plan.md
 
 # Vite
 *.local
