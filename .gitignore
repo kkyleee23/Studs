@@ -33,3 +33,6 @@ specs-plan.md
 
 # Vite
 *.local
+
+# Vercel
+.vercel

@@ -2,7 +2,7 @@
 
 Student–teacher management that runs outside the LMS your school already has. Classes, students, attendance, activities and scores in one place, without waiting on IT to provision anything.
 
-**Live: [studsweb.netlify.app](https://studsweb.netlify.app/)**
+**Live: [studs-eight.vercel.app](https://studs-eight.vercel.app/)**
 
 ---
 
