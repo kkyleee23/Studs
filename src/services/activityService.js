@@ -1,5 +1,3 @@
-// Service Layer — activities (Quiz #1, Midterm, ...).
-
 import * as activitiesRepo from '../data/activitiesRepo.js';
 import { softNotifyClass } from './notificationsService.js';
 import { getOrFetch, invalidate } from '../data/cache.js';

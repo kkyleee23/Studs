@@ -1,4 +1,3 @@
-// Classes page — list + create (teacher) / join (student).
 import * as classService from '../services/classService.js';
 import { getMyProfile } from '../services/userService.js';
 import { openModal } from '../components/modal.js';
@@ -48,8 +47,7 @@ export async function renderClasses(view) {
             }
             list.innerHTML = renderCards(items, isTeacher);
             wireCardEvents(list, isTeacher);
-            // Pull counts in the background; cards keep their dashes
-            // until the queries finish.
+
             loadCardCounts(list, items.map(c => c.id));
         } catch (e) {
             list.innerHTML = `<div class="error">${esc(friendlyError(e))}</div>`;
@@ -116,7 +114,7 @@ async function loadCardCounts(root, classIds) {
             if (s) s.textContent = studentCounts.get(id) ?? 0;
             if (a) a.textContent = activityCounts.get(id) ?? 0;
         }
-    } catch { /* leave dashes */ }
+    } catch {  }
 }
 
 async function openCreate(reload) {

@@ -1,4 +1,3 @@
-// Data Layer — activities CRUD.
 import { supabase } from './supabaseClient.js';
 
 export async function listByClass(classId) {

@@ -30,7 +30,7 @@ function renderFatal(app, title, detail, action) {
 }
 
 async function startOver() {
-    try { await signOut(); } catch { /* signing out is best effort */ }
+    try { await signOut(); } catch {  }
     clearProfileCache();
     clearCache();
     location.hash = '';

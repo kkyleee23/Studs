@@ -1,4 +1,3 @@
-// Reports — teacher: class grade list + summary; student: own breakdown.
 import * as gradeService from '../services/gradeService.js';
 import { getMyProfile } from '../services/userService.js';
 import { summarizeClass } from '../services/gradeEngine.js';

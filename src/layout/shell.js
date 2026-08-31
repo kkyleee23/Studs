@@ -1,4 +1,3 @@
-// Layout shell — sidebar + view outlet.
 import { getMyProfile, clearProfileCache } from '../services/userService.js';
 import { signOut } from '../data/authRepo.js';
 import * as classService from '../services/classService.js';
@@ -112,7 +111,6 @@ export async function mountLayout(root) {
     window.addEventListener('hashchange', highlight);
     highlight();
 
-    // Mobile drawer: toggle on hamburger, dismiss on backdrop or nav.
     const sidebar = root.querySelector('#sidebar');
     const backdrop = root.querySelector('#sidebar-backdrop');
     const menuBtn = root.querySelector('#btn-menu');
@@ -123,13 +121,10 @@ export async function mountLayout(root) {
     sidebar.querySelectorAll('a, .foot-link').forEach(el => el.addEventListener('click', closeDrawer));
     window.addEventListener('hashchange', closeDrawer);
 
-    // Load mini-stats lazily — don't block the shell.
     loadMiniStats(root, me, isTeacher).catch(() => {});
 
-    // Notifications: poll unread count, open popover on bell click.
     setupNotifications(root);
 
-    // Help & tips modal.
     root.querySelector('#btn-help').addEventListener('click', () => openHelpModal(isTeacher));
 }
 
@@ -193,7 +188,7 @@ function setupNotifications(root) {
             const n = await notifService.getUnreadCount();
             if (n > 0) { pill.textContent = n > 99 ? '99+' : String(n); pill.style.display = 'inline-grid'; }
             else { pill.style.display = 'none'; }
-        } catch { /* ignore */ }
+        } catch {  }
     }
 
     bell.addEventListener('click', async () => {
@@ -298,7 +293,7 @@ async function loadMiniStats(root, me, isTeacher) {
 
 function pickTip(isTeacher) {
     const pool = isTeacher ? TIPS_TEACHER : TIPS_STUDENT;
-    // Day-of-year rotation so the tip changes daily, not every refresh.
+
     const d = new Date();
     const idx = (d.getFullYear() * 366 + d.getMonth() * 31 + d.getDate()) % pool.length;
     return pool[idx];

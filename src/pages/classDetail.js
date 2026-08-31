@@ -1,4 +1,3 @@
-// Class detail — overview + tab nav + inline categories editor (teacher).
 import * as categoryService from '../services/categoryService.js';
 import * as classService from '../services/classService.js';
 import { getMyProfile } from '../services/userService.js';

@@ -1,8 +1,7 @@
-// Data Layer — scores CRUD.
 import { supabase } from './supabaseClient.js';
 
 export async function upsertScore(row) {
-    // Idempotent student log: (activity_id, student_id) is unique.
+
     const { data, error } = await supabase
         .from('scores')
         .upsert(row, { onConflict: 'activity_id,student_id' })

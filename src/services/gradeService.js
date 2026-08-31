@@ -1,7 +1,3 @@
-// Service Layer — grade orchestration.
-// Pulls configuration (categories) and scores from the DB, then
-// delegates pure math to the grade engine (Phase 7).
-
 import * as categoryService from './categoryService.js';
 import * as activityService from './activityService.js';
 import * as scoreService    from './scoreService.js';
@@ -24,7 +20,6 @@ export async function getClassGrades(classId) {
         scoreService.listForClass(classId)
     ]);
 
-    // Group scores by student, then run the engine per student.
     const byStudent = new Map();
     for (const s of scores) {
         const key = s.student_id;

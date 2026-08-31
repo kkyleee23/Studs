@@ -1,12 +1,9 @@
-// Service Layer — class use-cases.
-// Orchestrates repos and enforces business rules; never touches DOM.
-
 import * as classesRepo from '../data/classesRepo.js';
 import { currentUserId } from '../data/supabaseClient.js';
 import { getOrFetch, invalidate } from '../data/cache.js';
 
 function makeClassCode() {
-    // 6-char uppercase code; collision check handled by DB unique constraint.
+
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let s = '';
     for (let i = 0; i < 6; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
@@ -19,7 +16,6 @@ export async function createClass({ name, section, school_year }) {
     const teacherId = await currentUserId();
     if (!teacherId) throw new Error('Not authenticated');
 
-    // Retry up to 3 times on code collision (statistically rare at 32^6).
     let lastErr;
     for (let i = 0; i < 3; i++) {
         try {

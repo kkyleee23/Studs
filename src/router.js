@@ -1,6 +1,3 @@
-// Minimal hash-based router. Each route renders into #view.
-// Kept intentionally small — no framework needed (see spec: no over-engineering).
-
 import { renderDashboard }   from './pages/dashboard.js';
 import { renderClasses }     from './pages/classes.js';
 import { renderClassDetail } from './pages/classDetail.js';

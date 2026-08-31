@@ -1,4 +1,3 @@
-// Activities per class — teacher CRUD + student score logging.
 import * as activityService from '../services/activityService.js';
 import * as categoryService from '../services/categoryService.js';
 import * as scoreService    from '../services/scoreService.js';

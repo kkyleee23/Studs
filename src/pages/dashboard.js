@@ -1,4 +1,3 @@
-// Dashboard — quick stats + recent classes + recent notifications.
 import * as classService from '../services/classService.js';
 import * as notifService from '../services/notificationsService.js';
 import { getMyProfile } from '../services/userService.js';
@@ -19,8 +18,6 @@ export async function renderDashboard(view) {
     const classes = await classService.listMyClasses({ role: me?.role });
     const classIds = classes.map(c => c.id);
 
-    // Pull a few stats in parallel. Each is best-effort; on error
-    // we render a dash so the dashboard never blocks on one bad query.
     const [studentCount, activityCount, recentNotifs] = await Promise.all([
         countStudents(isTeacher, classIds),
         countActivities(classIds),

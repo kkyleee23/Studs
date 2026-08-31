@@ -1,29 +1,3 @@
-// ============================================================
-// Grade Computation Engine — pure functions, no I/O.
-//
-// Formula (Philippine weighted grading, 0–100 scale):
-//   categoryAverage = Σ counted_raw  /  Σ counted_max
-//   weightedScore   = categoryAverage × weight
-//   finalGrade      = Σ weightedScore
-//
-// Teacher-configurable switches (all data-driven, no hardcoding):
-//   • category.weight          — 0..100, any split per class
-//   • category.drop_lowest_n   — drop N lowest scored (non-EC) items
-//                                only when scored_count > drop_lowest_n
-//   • activity.is_extra_credit — raw counts, max doesn't; can exceed 100%
-//   • class.passing_grade      — threshold used in class summaries
-//
-// Engine hardcodes nothing about curriculum, categories, or scales.
-// ============================================================
-
-/**
- * @typedef {Object} Category     {id, name, weight, drop_lowest_n?}
- * @typedef {Object} Activity     {id, category_id, max_score, is_extra_credit?}
- * @typedef {Object} Score        {activity_id, raw_score}
- * @typedef {Object} GradeOptions
- *   normalizeWeights — rescale to sum of weights that have scored activities
- */
-
 export function computeFinalGrade({ categories, activities, scores, options = {} }) {
     const { normalizeWeights = false } = options;
 
@@ -64,13 +38,12 @@ function buildCategoryResult(category, activities, scoreByActivity) {
     const dropN        = Math.max(0, Number(category.drop_lowest_n) || 0);
     const acts         = activities.filter(a => a.category_id === category.id);
 
-    // Build per-activity records first (before any dropping).
     const items = acts.map(a => {
         const score = scoreByActivity.get(a.id);
         const max   = Number(a.max_score) || 0;
         const isEC  = !!a.is_extra_credit;
         const raw   = score ? clamp(Number(score.raw_score) || 0, 0, Infinity) : null;
-        // Cap non-EC scores at max; EC allowed to exceed.
+
         const capped = raw === null
             ? null
             : (isEC ? raw : Math.min(raw, max));
@@ -86,7 +59,6 @@ function buildCategoryResult(category, activities, scoreByActivity) {
         };
     });
 
-    // Apply drop-lowest-N (only to non-EC scored items, only when count > N).
     const scoredRegular = items
         .filter(i => !i.is_extra_credit && i.raw_score !== null && i.max_score > 0);
     if (dropN > 0 && scoredRegular.length > dropN) {
@@ -97,12 +69,11 @@ function buildCategoryResult(category, activities, scoreByActivity) {
         }
     }
 
-    // Accumulate counted numerator/denominator.
     let totalRaw = 0, totalMax = 0, counted = 0, ecBonus = 0;
     for (const i of items) {
         if (i.raw_score === null || i.dropped) continue;
         if (i.is_extra_credit) {
-            ecBonus += i.raw_score;     // numerator only
+            ecBonus += i.raw_score;
             counted += 1;
             continue;
         }
@@ -131,11 +102,6 @@ function buildCategoryResult(category, activities, scoreByActivity) {
     };
 }
 
-/**
- * Summarize grades across many students.
- * passingGrade defaults to 75 (PH default) but the teacher's class value
- * should be passed in from classes.passing_grade.
- */
 export function summarizeClass(studentGrades, passingGrade = 75) {
     const finals = studentGrades.map(g => g.final_grade).filter(Number.isFinite);
     if (finals.length === 0) {

@@ -1,6 +1,3 @@
-// Service Layer — grading categories (Quiz, Exam, ...) per class.
-// Weights are configurable per class. Fully data-driven.
-
 import * as categoriesRepo from '../data/categoriesRepo.js';
 import { getOrFetch, invalidate } from '../data/cache.js';
 
@@ -54,8 +51,6 @@ export async function removeCategory(id) {
     return deleted;
 }
 
-// Validation used before enabling a class for grading.
-// DB intentionally does not enforce this (row-by-row editing).
 export async function validateWeightsSumTo100(classId) {
     const cats = await categoriesRepo.listByClass(classId);
     const sum = cats.reduce((t, c) => t + Number(c.weight), 0);

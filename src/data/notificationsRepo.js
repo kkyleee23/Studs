@@ -1,4 +1,3 @@
-// Data Layer — notifications CRUD.
 import { supabase } from './supabaseClient.js';
 
 export async function listMine({ limit = 20 } = {}) {

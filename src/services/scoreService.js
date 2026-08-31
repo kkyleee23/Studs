@@ -1,5 +1,3 @@
-// Service Layer — score logging (student) and override (teacher).
-
 import * as scoresRepo from '../data/scoresRepo.js';
 import * as activitiesRepo from '../data/activitiesRepo.js';
 import { currentUserId } from '../data/supabaseClient.js';
@@ -15,7 +13,6 @@ export async function logScore({ activity_id, raw_score, note }) {
         throw new Error('Score must be a non-negative number');
     }
 
-    // DB trigger enforces raw_score <= max_score; RLS enforces enrollment.
     const saved = await scoresRepo.upsertScore({
         activity_id,
         student_id: uid,
@@ -47,7 +44,6 @@ export async function overrideScore({ activity_id, student_id, raw_score, note }
     });
     invalidate('scores:');
 
-    // Look up activity title + class for a friendly message + deep link.
     try {
         const act = await activitiesRepo.getById(activity_id);
         if (act) {
@@ -58,7 +54,7 @@ export async function overrideScore({ activity_id, student_id, raw_score, note }
                 link: `/classes/${act.class_id}/reports`,
             });
         }
-    } catch { /* ignore */ }
+    } catch {  }
 
     return saved;
 }
