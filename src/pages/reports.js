@@ -2,15 +2,14 @@
 import * as gradeService from '../services/gradeService.js';
 import { getMyProfile } from '../services/userService.js';
 import { summarizeClass } from '../services/gradeEngine.js';
-import { supabase } from '../data/supabaseClient.js';
+import * as classService from '../services/classService.js';
 
 export async function renderReports(view, { classId }) {
     view.innerHTML = `<p class="muted">Loading…</p>`;
     const me = await getMyProfile();
     const isTeacher = me?.role === 'teacher';
 
-    const { data: cls } = await supabase.from('classes')
-        .select('passing_grade').eq('id', classId).maybeSingle();
+    const cls = await classService.getClass(classId);
     const passingGrade = Number(cls?.passing_grade ?? 75);
 
     if (isTeacher) {

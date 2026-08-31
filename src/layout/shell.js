@@ -3,7 +3,8 @@ import { getMyProfile, clearProfileCache } from '../services/userService.js';
 import { signOut } from '../data/authRepo.js';
 import * as classService from '../services/classService.js';
 import * as notifService from '../services/notificationsService.js';
-import { supabase } from '../data/supabaseClient.js';
+import * as enrollmentsService from '../services/enrollmentsService.js';
+import * as scoreService from '../services/scoreService.js';
 import { clearAll as clearCache } from '../data/cache.js';
 
 const ICONS = {
@@ -139,7 +140,11 @@ function openHelpModal(isTeacher) {
     wrap.className = 'modal-backdrop';
     wrap.innerHTML = `
         <div class="modal" style="width:540px">
-            <div class="modal-header"><h2>Help &amp; tips</h2></div>
+            <div class="modal-header">
+                <h2>Help &amp; tips</h2>
+                <div class="spacer"></div>
+                <button type="button" class="modal-close" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+            </div>
             <div class="modal-body">
                 <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">
                     Getting started
@@ -161,8 +166,7 @@ function openHelpModal(isTeacher) {
     `;
     document.body.appendChild(wrap);
     const close = () => wrap.remove();
-    wrap.querySelector('[data-close]').addEventListener('click', close);
-    wrap.addEventListener('click', e => { if (e.target === wrap) close(); });
+    wrap.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
 }
 
 const TEACHER_GUIDE = [
@@ -279,19 +283,10 @@ async function loadMiniStats(root, me, isTeacher) {
     const classes = await classService.listMyClasses({ role: me?.role });
     let secondNum = 0;
 
-    if (isTeacher && classes.length > 0) {
-        const ids = classes.map(c => c.id);
-        const { count } = await supabase
-            .from('enrollments')
-            .select('*', { count: 'exact', head: true })
-            .in('class_id', ids);
-        secondNum = count ?? 0;
-    } else if (!isTeacher) {
-        const { count } = await supabase
-            .from('scores')
-            .select('*', { count: 'exact', head: true })
-            .eq('student_id', me?.id);
-        secondNum = count ?? 0;
+    if (isTeacher) {
+        secondNum = await enrollmentsService.countStudents(classes.map(c => c.id));
+    } else {
+        secondNum = await scoreService.countForStudent(me?.id);
     }
 
     const stats = root.querySelector('#mini-stats');

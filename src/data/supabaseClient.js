@@ -1,21 +1,21 @@
-// Data Layer — Supabase client singleton.
-// UI and Service layers must NEVER import supabase-js directly;
-// they go through the repos in this folder.
-
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const RAW_URL = (import.meta.env.VITE_SUPABASE_URL ?? '').trim();
+const RAW_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim();
 
-if (!SUPABASE_URL || !SUPABASE_ANON) {
-    throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
-}
+const SUPABASE_URL = RAW_URL.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
-    auth: { persistSession: true, autoRefreshToken: true }
-});
+export const configError = (!SUPABASE_URL || !RAW_KEY)
+    ? 'Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. Copy .env.example to .env and fill both in, then restart the dev server.'
+    : null;
+
+export const supabase = createClient(
+    SUPABASE_URL || 'http://localhost:54321',
+    RAW_KEY || 'missing-anon-key',
+    { auth: { persistSession: true, autoRefreshToken: true } }
+);
 
 export async function currentUserId() {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id ?? null;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user?.id ?? null;
 }

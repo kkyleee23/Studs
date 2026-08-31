@@ -4,7 +4,6 @@ import * as classService from '../services/classService.js';
 import { getMyProfile } from '../services/userService.js';
 import { openModal } from '../components/modal.js';
 import { toast } from '../components/notify.js';
-import { supabase } from '../data/supabaseClient.js';
 
 export async function renderClassDetail(view, { classId }) {
     view.innerHTML = `<p class="muted">Loading…</p>`;
@@ -12,9 +11,7 @@ export async function renderClassDetail(view, { classId }) {
     const isTeacher = me?.role === 'teacher';
 
     async function loadClass() {
-        const { data, error } = await supabase.from('classes').select('*').eq('id', classId).maybeSingle();
-        if (error) throw error;
-        return data;
+        return classService.getClass(classId);
     }
 
     let cls = await loadClass();

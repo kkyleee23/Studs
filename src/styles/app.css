@@ -61,6 +61,7 @@ h1, h2, .auth-name, .auth-title, .auth-logo,
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body {
     margin: 0; height: 100%;
     font-family: var(--font-sans);
@@ -159,6 +160,10 @@ a:hover { border-bottom-color: var(--primary); }
     box-shadow: 0 0 0 3px rgba(28,26,22,.08);
 }
 .error { color: var(--danger); font-size: 13px; margin: 8px 0; }
+.notice {
+    color: var(--accent-green); background: #e9efde; border: 1px solid #cdd9b9;
+    border-radius: 6px; padding: 10px 12px; font-size: 13px; margin: 8px 0; line-height: 1.5;
+}
 
 /* ---- Layout shell ---- */
 .layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; position: relative; }
@@ -534,6 +539,13 @@ a:hover { border-bottom-color: var(--primary); }
     flex-shrink: 0;
 }
 .modal-header h2 { margin: 0; font-family: var(--font-serif); font-weight: 400; font-size: 20px; letter-spacing: -0.01em; }
+.modal-close {
+    display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0;
+    border: 1px solid transparent; border-radius: 6px;
+    background: transparent; color: var(--muted); cursor: pointer;
+}
+.modal-close:hover { background: var(--surface); color: var(--text); border-color: var(--border); }
+.modal-close svg { width: 16px; height: 16px; }
 .modal-body { padding: 22px 20px; overflow-y: auto; flex: 1; }
 .modal-footer {
     padding: 12px 20px; border-top: 1px solid var(--border);

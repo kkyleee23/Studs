@@ -1,10 +1,10 @@
-// Attendance — teacher: mark per-day matrix; student: read own history.
-import { supabase } from '../data/supabaseClient.js';
+import * as attendanceService from '../services/attendanceService.js';
+import * as enrollmentsService from '../services/enrollmentsService.js';
 import { getMyProfile } from '../services/userService.js';
-import { softNotifyUser } from '../services/notificationsService.js';
 import { toast } from '../components/notify.js';
+import { friendlyError } from '../components/errors.js';
 
-const STATUSES = ['present', 'absent', 'late', 'excused'];
+const STATUSES = attendanceService.statuses();
 
 export async function renderAttendance(view, { classId }) {
     view.innerHTML = `<p class="muted">Loading…</p>`;
@@ -37,85 +37,91 @@ export async function renderAttendance(view, { classId }) {
         const grid = view.querySelector('#grid');
         grid.innerHTML = '<p class="muted">Loading…</p>';
 
-        if (isTeacher) {
-            const [rosterRes, attRes] = await Promise.all([
-                supabase.from('enrollments').select('student:users(id, full_name)').eq('class_id', classId),
-                supabase.from('attendance').select('*').eq('class_id', classId).eq('date', date)
-            ]);
-            if (rosterRes.error) { grid.innerHTML = `<div class="error">${rosterRes.error.message}</div>`; return; }
-            const roster = (rosterRes.data ?? []).map(r => r.student);
-            const byStudent = new Map((attRes.data ?? []).map(a => [a.student_id, a.status]));
-
-            if (!roster.length) {
-                grid.innerHTML = `<div class="empty">
-                    <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-                    <div class="empty-title">No one to mark</div>
-                    <div class="empty-sub">No students have joined this class yet. Share your class code so they can join.</div>
-                </div>`;
-                return;
-            }
-
-            grid.innerHTML = `
-                <table class="table">
-                    <thead><tr><th>Student</th><th>Status</th></tr></thead>
-                    <tbody>${roster.map(s => `
-                        <tr>
-                            <td>${esc(s.full_name)}</td>
-                            <td><select class="select" data-student="${s.id}">
-                                <option value="">Not yet marked</option>
-                                ${STATUSES.map(st => `<option value="${st}" ${byStudent.get(s.id) === st ? 'selected' : ''}>${statusLabel(st)}</option>`).join('')}
-                            </select></td>
-                        </tr>
-                    `).join('')}</tbody>
-                </table>
-            `;
-
-            grid.querySelectorAll('select[data-student]').forEach(sel => {
-                sel.addEventListener('change', async () => {
-                    const student_id = sel.dataset.student;
-                    const status = sel.value;
-                    try {
-                        if (!status) {
-                            await supabase.from('attendance')
-                                .delete().eq('class_id', classId).eq('student_id', student_id).eq('date', date);
-                        } else {
-                            await supabase.from('attendance').upsert({
-                                class_id: classId, student_id, date, status, recorded_by: me.id
-                            }, { onConflict: 'class_id,student_id,date' });
-                            if (status === 'absent' || status === 'late') {
-                                softNotifyUser({
-                                    target_uid: student_id,
-                                    title: status === 'absent' ? 'Marked absent' : 'Marked late',
-                                    body: `For ${date}`,
-                                    link: `/classes/${classId}/attendance`,
-                                });
-                            }
-                        }
-                        toast('Saved', 'success');
-                    } catch (e) { toast(e.message, 'error'); }
-                });
-            });
-        } else {
-            const { data, error } = await supabase.from('attendance')
-                .select('date, status').eq('class_id', classId).eq('student_id', me.id)
-                .order('date', { ascending: false });
-            if (error) { grid.innerHTML = `<div class="error">${error.message}</div>`; return; }
-            if (!data.length) {
-                grid.innerHTML = `<div class="empty">
-                    <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-                    <div class="empty-title">No records yet</div>
-                    <div class="empty-sub">Your teacher will mark attendance here.</div>
-                </div>`;
-                return;
-            }
-            grid.innerHTML = `
-                <table class="table">
-                    <thead><tr><th>Date</th><th>Status</th></tr></thead>
-                    <tbody>${data.map(r => `<tr><td>${r.date}</td><td>${statusBadge(r.status)}</td></tr>`).join('')}</tbody>
-                </table>
-            `;
+        try {
+            if (isTeacher) await renderTeacherGrid(grid, date);
+            else await renderStudentHistory(grid);
+        } catch (e) {
+            grid.innerHTML = `<div class="error">${esc(friendlyError(e))}</div>`;
         }
     }
+
+    async function renderTeacherGrid(grid, date) {
+        const [enrolled, marked] = await Promise.all([
+            enrollmentsService.getRoster(classId),
+            attendanceService.getClassDay(classId, date)
+        ]);
+        const roster = enrolled.map(r => r.student);
+
+        if (!roster.length) {
+            grid.innerHTML = `<div class="empty">
+                <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                <div class="empty-title">No one to mark</div>
+                <div class="empty-sub">No students have joined this class yet. Share your class code so they can join.</div>
+            </div>`;
+            return;
+        }
+
+        grid.innerHTML = `
+            <table class="table">
+                <thead><tr><th>Student</th><th>Status</th></tr></thead>
+                <tbody>${roster.map(s => `
+                    <tr>
+                        <td>${esc(s.full_name)}</td>
+                        <td><select class="select" data-student="${esc(s.id)}">
+                            <option value="">Not yet marked</option>
+                            ${STATUSES.map(st => `<option value="${st}" ${marked.get(s.id) === st ? 'selected' : ''}>${statusLabel(st)}</option>`).join('')}
+                        </select></td>
+                    </tr>
+                `).join('')}</tbody>
+            </table>
+        `;
+
+        grid.querySelectorAll('select[data-student]').forEach(sel => {
+            let previous = sel.value;
+            sel.addEventListener('change', async () => {
+                const student_id = sel.dataset.student;
+                const status = sel.value;
+                sel.disabled = true;
+                try {
+                    if (!status) {
+                        await attendanceService.clearMark({ class_id: classId, student_id, date });
+                    } else {
+                        await attendanceService.mark({
+                            class_id: classId, student_id, date, status, recorded_by: me.id
+                        });
+                    }
+                    previous = status;
+                    toast('Saved', 'success');
+                } catch (e) {
+                    sel.value = previous;
+                    toast(friendlyError(e), 'error');
+                } finally {
+                    sel.disabled = false;
+                }
+            });
+        });
+    }
+
+    async function renderStudentHistory(grid) {
+        const rows = await attendanceService.getStudentHistory(classId, me.id);
+
+        if (!rows.length) {
+            grid.innerHTML = `<div class="empty">
+                <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                <div class="empty-title">No records yet</div>
+                <div class="empty-sub">Your teacher will mark attendance here.</div>
+            </div>`;
+            return;
+        }
+
+        grid.innerHTML = `
+            <table class="table">
+                <thead><tr><th>Date</th><th>Status</th></tr></thead>
+                <tbody>${rows.map(r => `<tr><td>${esc(r.date)}</td><td>${statusBadge(r.status)}</td></tr>`).join('')}</tbody>
+            </table>
+        `;
+    }
+
     load();
 }
 

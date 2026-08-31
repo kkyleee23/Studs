@@ -40,6 +40,10 @@ export async function createClass({ name, section, school_year }) {
     throw lastErr;
 }
 
+export async function getClass(classId) {
+    return classesRepo.getClassById(classId);
+}
+
 export async function joinClass({ code }) {
     const trimmed = code?.trim();
     if (!trimmed) throw new Error('Class code is required');

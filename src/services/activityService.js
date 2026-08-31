@@ -48,3 +48,14 @@ export async function removeActivity(id) {
     invalidate('scores:');
     return result;
 }
+
+export async function countForClasses(classIds) {
+    return activitiesRepo.countForClasses(classIds);
+}
+
+export async function countsByClass(classIds) {
+    const rows = await activitiesRepo.listClassIds(classIds);
+    const counts = new Map();
+    for (const r of rows) counts.set(r.class_id, (counts.get(r.class_id) ?? 0) + 1);
+    return counts;
+}

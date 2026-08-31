@@ -30,3 +30,13 @@ export async function listForClass(classId) {
     if (error) throw error;
     return data ?? [];
 }
+
+export async function countForStudent(studentId) {
+    if (!studentId) return 0;
+    const { count, error } = await supabase
+        .from('scores')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', studentId);
+    if (error) throw error;
+    return count ?? 0;
+}

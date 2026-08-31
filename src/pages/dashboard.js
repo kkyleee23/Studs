@@ -2,7 +2,8 @@
 import * as classService from '../services/classService.js';
 import * as notifService from '../services/notificationsService.js';
 import { getMyProfile } from '../services/userService.js';
-import { supabase } from '../data/supabaseClient.js';
+import * as enrollmentsService from '../services/enrollmentsService.js';
+import * as activityService from '../services/activityService.js';
 
 const ICONS = {
     classes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5z"/></svg>`,
@@ -108,25 +109,14 @@ export async function renderDashboard(view) {
 }
 
 async function countStudents(isTeacher, classIds) {
-    if (!isTeacher || classIds.length === 0) return 0;
-    try {
-        const { count } = await supabase
-            .from('enrollments')
-            .select('*', { count: 'exact', head: true })
-            .in('class_id', classIds);
-        return count ?? 0;
-    } catch { return 0; }
+    if (!isTeacher) return 0;
+    try { return await enrollmentsService.countStudents(classIds); }
+    catch { return 0; }
 }
 
 async function countActivities(classIds) {
-    if (classIds.length === 0) return 0;
-    try {
-        const { count } = await supabase
-            .from('activities')
-            .select('*', { count: 'exact', head: true })
-            .in('class_id', classIds);
-        return count ?? 0;
-    } catch { return 0; }
+    try { return await activityService.countForClasses(classIds); }
+    catch { return 0; }
 }
 
 function firstName(full) {

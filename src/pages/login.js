@@ -1,6 +1,5 @@
-// Login / sign-up. On success, reboots the app.
 import { signIn, signUp } from '../data/authRepo.js';
-import { supabase } from '../data/supabaseClient.js';
+import { friendlyError } from '../components/errors.js';
 
 export function renderLogin(root, { onSuccess }) {
     root.innerHTML = `
@@ -38,6 +37,7 @@ export function renderLogin(root, { onSuccess }) {
                         </select>
                     </div>
 
+                    <div class="notice" hidden></div>
                     <div class="error" hidden></div>
 
                     <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:10px 14px">
@@ -54,19 +54,21 @@ export function renderLogin(root, { onSuccess }) {
         </div>
     `;
 
-    const form    = root.querySelector('form');
-    const toggle  = root.querySelector('[data-toggle]');
+    const form         = root.querySelector('form');
+    const submitBtn    = form.querySelector('button[type="submit"]');
+    const toggle       = root.querySelector('[data-toggle]');
     const togglePrompt = root.querySelector('[data-toggle-prompt]');
-    const label   = root.querySelector('[data-label]');
-    const title   = root.querySelector('[data-title]');
-    const subtitle = root.querySelector('[data-subtitle]');
-    const errBox  = root.querySelector('.error');
+    const label        = root.querySelector('[data-label]');
+    const title        = root.querySelector('[data-title]');
+    const subtitle     = root.querySelector('[data-subtitle]');
+    const errBox       = root.querySelector('.error');
+    const noticeBox    = root.querySelector('.notice');
     let mode = 'signin';
+    let busy = false;
 
-    toggle.addEventListener('click', e => {
-        e.preventDefault();
-        mode = mode === 'signin' ? 'signup' : 'signin';
-        root.querySelectorAll('[data-signup]').forEach(el => el.hidden = mode !== 'signup');
+    function setMode(next) {
+        mode = next;
+        root.querySelectorAll('[data-signup]').forEach(el => { el.hidden = mode !== 'signup'; });
         if (mode === 'signup') {
             title.textContent = 'Create your account';
             subtitle.textContent = 'It takes about 30 seconds.';
@@ -80,35 +82,71 @@ export function renderLogin(root, { onSuccess }) {
             togglePrompt.textContent = 'New to STUDS?';
             toggle.textContent = 'Create an account';
         }
+    }
+
+    function showError(message) {
+        noticeBox.hidden = true;
+        errBox.textContent = message;
+        errBox.hidden = false;
+    }
+
+    function showNotice(message) {
         errBox.hidden = true;
+        noticeBox.textContent = message;
+        noticeBox.hidden = false;
+    }
+
+    function setBusy(next) {
+        busy = next;
+        submitBtn.disabled = next;
+        label.textContent = next
+            ? (mode === 'signup' ? 'Creating account…' : 'Signing in…')
+            : (mode === 'signup' ? 'Create account' : 'Sign in');
+    }
+
+    toggle.addEventListener('click', e => {
+        e.preventDefault();
+        if (busy) return;
+        setMode(mode === 'signin' ? 'signup' : 'signin');
+        errBox.hidden = true;
+        noticeBox.hidden = true;
     });
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (busy) return;
+
         errBox.hidden = true;
+        noticeBox.hidden = true;
         const data = Object.fromEntries(new FormData(form));
+        setBusy(true);
 
         try {
             if (mode === 'signin') {
                 await signIn({ email: data.email, password: data.password });
-            } else {
-                const user = await signUp({ email: data.email, password: data.password });
-                // Ensure a profile row exists. Role id: 1=teacher, 2=student (from schema seed).
-                if (user) {
-                    const roleId = data.role === 'student' ? 2 : 1;
-                    const { error: profileErr } = await supabase.from('users').upsert({
-                        id: user.id,
-                        email: data.email,
-                        full_name: data.full_name || data.email.split('@')[0],
-                        role_id: roleId
-                    });
-                    if (profileErr) throw profileErr;
-                }
+                onSuccess();
+                return;
             }
-            onSuccess();
+
+            const { session } = await signUp({
+                email: data.email,
+                password: data.password,
+                full_name: data.full_name?.trim() || data.email.split('@')[0],
+                role: data.role === 'student' ? 'student' : 'teacher'
+            });
+
+            if (session) {
+                onSuccess();
+                return;
+            }
+
+            setMode('signin');
+            form.querySelector('#f-pass').value = '';
+            showNotice(`Account created. We sent a confirmation link to ${data.email} — open it, then sign in here.`);
         } catch (ex) {
-            errBox.textContent = ex.message || String(ex);
-            errBox.hidden = false;
+            showError(friendlyError(ex));
+        } finally {
+            setBusy(false);
         }
     });
 }

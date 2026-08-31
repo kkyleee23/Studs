@@ -1,7 +1,8 @@
 // Service Layer — score logging (student) and override (teacher).
 
 import * as scoresRepo from '../data/scoresRepo.js';
-import { currentUserId, supabase } from '../data/supabaseClient.js';
+import * as activitiesRepo from '../data/activitiesRepo.js';
+import { currentUserId } from '../data/supabaseClient.js';
 import { softNotifyUser } from './notificationsService.js';
 import { getOrFetch, invalidate } from '../data/cache.js';
 
@@ -48,11 +49,7 @@ export async function overrideScore({ activity_id, student_id, raw_score, note }
 
     // Look up activity title + class for a friendly message + deep link.
     try {
-        const { data: act } = await supabase
-            .from('activities')
-            .select('title, max_score, class_id')
-            .eq('id', activity_id)
-            .maybeSingle();
+        const act = await activitiesRepo.getById(activity_id);
         if (act) {
             softNotifyUser({
                 target_uid: student_id,
@@ -80,4 +77,8 @@ export async function listForClass(classId) {
         () => scoresRepo.listForClass(classId),
         20_000
     );
+}
+
+export async function countForStudent(studentId) {
+    return scoresRepo.countForStudent(studentId);
 }

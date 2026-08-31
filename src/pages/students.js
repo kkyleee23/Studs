@@ -1,5 +1,5 @@
-// Students roster — teacher view.
-import { supabase } from '../data/supabaseClient.js';
+import * as enrollmentsService from '../services/enrollmentsService.js';
+import { friendlyError } from '../components/errors.js';
 
 export async function renderStudents(view, { classId }) {
     view.innerHTML = `
@@ -15,15 +15,17 @@ export async function renderStudents(view, { classId }) {
         <div class="card" style="padding:0"><div id="list" style="padding:20px"><p class="muted">Loading…</p></div></div>
     `;
 
-    const { data, error } = await supabase
-        .from('enrollments')
-        .select('joined_at, student:users(id, full_name, email)')
-        .eq('class_id', classId)
-        .order('joined_at', { ascending: true });
-
     const list = view.querySelector('#list');
-    if (error) { list.innerHTML = `<div class="error">${error.message}</div>`; return; }
-    if (!data?.length) {
+
+    let data;
+    try {
+        data = await enrollmentsService.getRoster(classId);
+    } catch (e) {
+        list.innerHTML = `<div class="error">${esc(friendlyError(e))}</div>`;
+        return;
+    }
+
+    if (!data.length) {
         list.innerHTML = `<div class="empty">
             <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
             <div class="empty-title">No one has joined yet</div>

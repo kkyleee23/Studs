@@ -1,10 +1,13 @@
-// Data Layer — auth operations only. No business logic.
 import { supabase } from './supabaseClient.js';
 
-export async function signUp({ email, password }) {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+export async function signUp({ email, password, full_name, role }) {
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: full_name ?? null, role: role ?? 'student' } }
+    });
     if (error) throw error;
-    return data.user;
+    return data;
 }
 
 export async function signIn({ email, password }) {

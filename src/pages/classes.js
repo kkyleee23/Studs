@@ -3,7 +3,9 @@ import * as classService from '../services/classService.js';
 import { getMyProfile } from '../services/userService.js';
 import { openModal } from '../components/modal.js';
 import { toast } from '../components/notify.js';
-import { supabase } from '../data/supabaseClient.js';
+import { friendlyError } from '../components/errors.js';
+import * as enrollmentsService from '../services/enrollmentsService.js';
+import * as activityService from '../services/activityService.js';
 
 const SWATCH_PALETTE = ['', 'green', 'amber', 'blue'];
 
@@ -50,7 +52,7 @@ export async function renderClasses(view) {
             // until the queries finish.
             loadCardCounts(list, items.map(c => c.id));
         } catch (e) {
-            list.innerHTML = `<div class="error">${e.message}</div>`;
+            list.innerHTML = `<div class="error">${esc(friendlyError(e))}</div>`;
         }
     }
     reload();
@@ -104,12 +106,10 @@ function wireCardEvents(root, isTeacher) {
 async function loadCardCounts(root, classIds) {
     if (classIds.length === 0) return;
     try {
-        const [enrolls, acts] = await Promise.all([
-            supabase.from('enrollments').select('class_id').in('class_id', classIds),
-            supabase.from('activities').select('class_id').in('class_id', classIds),
+        const [studentCounts, activityCounts] = await Promise.all([
+            enrollmentsService.countsByClass(classIds),
+            activityService.countsByClass(classIds),
         ]);
-        const studentCounts = bucket(enrolls.data ?? [], 'class_id');
-        const activityCounts = bucket(acts.data ?? [], 'class_id');
         for (const id of classIds) {
             const s = root.querySelector(`[data-stat-students="${id}"]`);
             const a = root.querySelector(`[data-stat-activities="${id}"]`);
@@ -117,12 +117,6 @@ async function loadCardCounts(root, classIds) {
             if (a) a.textContent = activityCounts.get(id) ?? 0;
         }
     } catch { /* leave dashes */ }
-}
-
-function bucket(rows, key) {
-    const m = new Map();
-    for (const r of rows) m.set(r[key], (m.get(r[key]) ?? 0) + 1);
-    return m;
 }
 
 async function openCreate(reload) {
@@ -141,7 +135,7 @@ async function openCreate(reload) {
         await classService.createClass(data);
         toast('Class created', 'success');
         reload();
-    } catch (e) { toast(e.message, 'error'); }
+    } catch (e) { toast(friendlyError(e), 'error'); }
 }
 
 async function openJoin(reload) {
@@ -163,8 +157,7 @@ async function openJoin(reload) {
         toast('Joined! Welcome to the class.', 'success');
         reload();
     } catch (e) {
-        const msg = /not found/i.test(e.message) ? "We couldn't find a class with that code. Double-check with your teacher." : e.message;
-        toast(msg, 'error');
+        toast(friendlyError(e), 'error');
     }
 }
 
