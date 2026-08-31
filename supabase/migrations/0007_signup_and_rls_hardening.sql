@@ -27,6 +27,13 @@ declare
     v_role_id   smallint;
     v_full_name text;
 begin
+    -- public.users.email is NOT NULL. A user with no email (phone signup, or
+    -- one created by an admin) would raise here and fail the whole signup,
+    -- so skip rather than block account creation.
+    if new.email is null then
+        return new;
+    end if;
+
     v_role_name := coalesce(new.raw_user_meta_data ->> 'role', 'student');
     if v_role_name not in ('teacher', 'student') then
         v_role_name := 'student';
