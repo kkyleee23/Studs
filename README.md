@@ -4,10 +4,6 @@ Student–teacher management that runs outside the LMS your school already has. 
 
 **Live: [studs-web.vercel.app](https://studs-web.vercel.app/)**
 
----
-
-![Teacher dashboard](reference-images/dashboard.png)
-
 ## What's in it
 
 | Page | Does |
@@ -21,15 +17,6 @@ Student–teacher management that runs outside the LMS your school already has. 
 | `login` | Supabase auth |
 
 Teachers create a class and get a join code. Students enter the code, log their own scores against each activity, and see a running grade. Teachers can override any score, mark attendance, and read the class report.
-
-<table>
-<tr>
-<td width="50%"><img src="reference-images/create-class.png" alt="Creating a class"></td>
-<td width="50%"><img src="reference-images/class-overview.png" alt="Class overview: join code and grading categories"></td>
-</tr>
-</table>
-
-![Class grade report](reference-images/class-report.png)
 
 ## Architecture
 
