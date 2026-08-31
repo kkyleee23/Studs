@@ -36,3 +36,6 @@ specs-plan.md
 
 # Vercel
 .vercel
+
+# Database schema and policies — kept local
+supabase/

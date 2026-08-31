@@ -73,7 +73,7 @@ Weighted, on a 0–100 scale, and configurable per class rather than hardcoded:
 
 ## Database
 
-PostgreSQL on Supabase. Schema and policies live in `supabase/migrations`, applied in order.
+PostgreSQL on Supabase. The schema and its migrations are kept private and are not published with this repository.
 
 Authorization is Row Level Security, not client-side checks: teachers reach only their own classes, students only the classes they joined and their own scores. Cross-cutting reads that would otherwise recurse through RLS (resolving a join code, seeing a classmate's name) go through `SECURITY DEFINER` helpers that check membership first.
 
@@ -95,7 +95,7 @@ npm run dev
 
 `npm run build` produces a production bundle; `npm run preview` serves it.
 
-You will also need a Supabase project with the migrations in `supabase/migrations` applied in order.
+Running it against real data also needs a Supabase project with the schema applied. Those migrations are not part of this repository.
 
 ## Notes
 
