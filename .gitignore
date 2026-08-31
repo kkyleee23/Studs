@@ -33,4 +33,3 @@ specs-plan.md
 
 # Vite
 *.local
-.env.example
