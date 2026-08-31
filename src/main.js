@@ -58,7 +58,7 @@ async function boot() {
             renderFatal(
                 app,
                 'Your profile is incomplete',
-                "You're signed in, but this account has no profile yet. Sign out and create your account again — if it keeps happening, tell your teacher.",
+                "You're signed in, but this account has no profile record. Signing up again will not fix it — the account already exists. Ask your teacher to have the profile restored.",
                 { label: 'Sign out', run: startOver }
             );
             return;
